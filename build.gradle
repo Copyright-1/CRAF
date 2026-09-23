@@ -1,0 +1,85 @@
+plugins {
+    id 'java'
+}
+
+// Обычная сборка без ForgeGradle: ForgeGradle 2.3 сейчас не может скачать
+// Forge (maven.minecraftforge.net требует авторизацию), а моду он и не нужен:
+// в коде нет MCP-имён (только стабильные Forge/LWJGL/Java API), поэтому
+// реобфускация не требуется - достаточно plain javac -source/-target 1.8.
+group = 'cleanroom-androidfixer'
+version = '1.0.0'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+}
+
+def libsDir = file("$projectDir/libs")
+def forgeUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.12.2-14.23.5.2860/forge-1.12.2-14.23.5.2860-universal.jar'
+
+// Скачивание jar-зависимостей (только для компиляции, в мод они не пакуются).
+task downloadLibs {
+    outputs.dir libsDir
+    doLast {
+        libsDir.mkdirs()
+        def artifacts = [
+            'forge-universal.jar': forgeUrl,
+            'lwjgl-3.3.1.jar'     : 'https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.1/lwjgl-3.3.1.jar',
+            'lwjgl-glfw-3.3.1.jar': 'https://repo1.maven.org/maven2/org/lwjgl/lwjgl-glfw/3.3.1/lwjgl-glfw-3.3.1.jar'
+        ]
+        artifacts.each { name, url ->
+            def target = new File(libsDir, name)
+            if (!target.exists()) {
+                println "Downloading $name ..."
+                new URL(url).withInputStream { ins -> target.withOutputStream { it << ins } }
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java { srcDirs = ['src/main/java'] }
+        resources { srcDirs = ['src/main/resources'] }
+    }
+}
+
+dependencies {
+    compileOnly files("$libsDir/forge-universal.jar", "$libsDir/lwjgl-3.3.1.jar", "$libsDir/lwjgl-glfw-3.3.1.jar")
+    // Аннотации Mixin: только для компиляции, в рантайме их даёт MixinBooter/CleanMix.
+    compileOnly 'org.spongepowered:mixin:0.8.7'
+    compileOnly 'org.ow2.asm:asm:9.7'
+    compileOnly 'org.ow2.asm:asm-tree:9.7'
+}
+
+compileJava {
+    dependsOn downloadLibs
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('mcmod.info') {
+        expand 'version': project.version, 'mcversion': '1.12.2'
+    }
+}
+
+jar {
+    archiveBaseName = 'cleanroom-androidfixer'
+    from sourceSets.main.output
+    // MixinBooter подхватывает миксин-конфиг по этому атрибуту манифеста.
+    manifest {
+        attributes('MixinConfigs': 'mixins.cleanroom-androidfixer.json')
+    }
+}
+
+// Удобная сборка одной командой: ./gradlew buildMod
+// (чистая сборка: ./gradlew clean buildMod)
+task buildMod(dependsOn: ['build']) {
+    doLast {
+        println "Built: ${jar.archiveFile.get().asFile}"
+    }
+}

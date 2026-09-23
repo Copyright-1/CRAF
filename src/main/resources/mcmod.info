@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "cleanroomandroidfixer",
+    "name": "Cleanroom Android Fixer",
+    "description": "Fixes missing key characters (letters/symbols) when playing CleanroomMC 1.12.2 via MojoLauncher on-screen buttons.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://github.com/Copyright-1/CRAF",
+    "updateUrl": "",
+    "authorList": ["Copyright"],
+    "credits": "CleanroomMC, MojoLauncher",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "cleanroomandroidfixer.mixin",
+  "plugin": "cleanroomandroidfixer.mixin.KirinoMixinPlugin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinKirinoClientCore"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}
