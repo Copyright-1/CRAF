@@ -9,7 +9,6 @@ name: Build and upload Artifact
 
 on:
   push:
-    # Звездочка '**' заставляет workflow запускаться при пуше в ЛЮБУЮ ветку репозитория
     branches: [ "main", "**" ]
   pull_request:
     branches: [ "main" ]
@@ -18,7 +17,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      # Меняем на write, чтобы джоба могла создать релиз при пуше в main
       contents: write
 
     steps:
@@ -35,22 +33,22 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
     - name: Build with Gradle Wrapper
       run: ./gradlew buildMod
 
-    # Шаг публикации релиза. Выполнится только если пуш был именно в ветку main
     - name: Create Release and Publish
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
-        # Автоматически генерирует имя тега на основе даты/времени, если тега нет (например, run-452391)
         tag_name: build-\${{ github.run_number }}
         name: Release Build \${{ github.run_number }}
         body: |
           Автоматический релиз из ветки `main`.
           Статус сборки: Успешно.
         generate_release_notes: true
-        # Укажите путь к файлу вашего мода. Замените *.jar на точное имя, если нужно
         files: |
           build/libs/*.jar
       env:
